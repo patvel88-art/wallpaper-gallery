@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wallpaper gallery</title>
+  <style>
+    :root {
+      --bg-dark: #121212;
+      --fg-dark: #eee;
+      --bg-light: #fff;
+      --fg-light: #121212;
+      --gold: #ffd700;
+      --btn-bg: #333;
+      --btn-hover-bg: #555;
+      --accent: #ff4081;
+      --toast-bg: rgba(50, 50, 50, 0.9);
+      --toast-fg: #fff;
+    }
+
+    /* Global and theme */
+    body {
+      background: var(--bg, var(--bg-dark));
+      color: var(--fg, var(--fg-dark));
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; padding: 1rem;
+      transition: background 0.4s ease, color 0.4s ease;
+      scroll-behavior: smooth;
+    }
+
+    header {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      color: var(--gold);
+      margin: 0 0 0.5rem 0;
+      font-weight: 900;
+      flex: 1 1 100%;
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 8px var(--gold);
+      user-select: none;
+        text-align: center;
+        justify-content: center;
+    }
+
+    #controls {
+      flex: 1 1 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    input[type="text"], select, input[type="email"], input[type="password"] {
+      flex: 1 1 150px;
+      padding: 0.5rem 0.8rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      box-shadow: 0 0 8px transparent;
+      transition: box-shadow 0.3s ease;
+    }
+    input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, select:focus {
+      outline: none;
+      box-shadow: 0 0 15px var(--gold);
+    }
+
+    button {
+      background: var(--btn-bg);
+      border: none;
+      color: var(--gold);
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 0.3s ease, transform 0.15s ease;
+      flex: 0 0 auto;
+      user-select: none;
+      box-shadow: 0 3px 7px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    button:hover {
+      background: var(--btn-hover-bg);
+      transform: scale(1.05);
+      box-shadow: 0 5px 14px rgba(255,215,0,0.7);
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+
+    #userArea {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gold);
+      user-select: none;
+    }
+
+    #gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+      gap: 1rem;
+      opacity: 0;
+      animation: fadeInGallery 1s forwards;
+    }
+
+    @keyframes fadeInGallery {
+      to { opacity: 1; }
+    }
+
+    .wallpaper {
+      background: #222;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transform: translateY(20px);
+      opacity: 0;
+      animation: slideFadeIn 0.6s forwards;
+      animation-delay: var(--delay);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .wallpaper:hover {
+      transform: translateY(0) scale(1.05);
+      box-shadow: 0 15px 40px rgba(255,215,0,0.9);
+      z-index: 2;
+    }
+
+    @keyframes slideFadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .wallpaper img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      flex-shrink: 0;
+      filter: brightness(0.9);
+      transition: filter 0.3s ease;
+      border-radius: 14px 14px 0 0;
+      opacity: 0;
+      animation: imgFadeIn 0.6s forwards;
+    }
+    .wallpaper:hover img {
+      filter: brightness(1);
+    }
+
+    @keyframes imgFadeIn {
+      to { opacity: 1; }
+    }
+
+    .info {
+      padding: 0.8rem 1rem;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .info strong {
+      font-size: 1.15rem;
+      margin-bottom: 0.4rem;
+      color: var(--gold);
+      text-shadow: 0 0 4px #000;
+    }
+    .info small {
+      color: #bbb;
+      font-size: 0.9rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .favorite {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: transparent;
+      border: none;
+      font-size: 32px;
+      color: #999;
+      cursor: pointer;
+      user-select: none;
+      text-shadow: 0 0 6px #000;
+      transition: color 0.3s ease, transform 0.3s ease;
+      filter: drop-shadow(0 0 1px black);
+      z-index: 10;
+    }
+    .favorite:hover {
+      color: var(--accent);
+      transform: scale(1.3);
+      text-shadow: 0 0 12px var(--accent);
+    }
+    .favorite.active {
+      color: var(--accent);
+      animation: heartPulse 0.8s ease forwards;
+      text-shadow: 0 0 15px var(--accent);
+    }
+
+    @keyframes heartPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.4); }
+      100% { transform: scale(1); }
+    }
+
+    .download {
+      background: var(--gold);
+      border: none;
+      color: var(--bg-dark);
+      font-weight: 700;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      align-self: flex-start;
+      transition: background 0.3s ease, transform 0.2s ease;
+      user-select: none;
+      font-size: 1rem;
+    }
+    .download:hover {
+      background: #c2a400;
+      transform: scale(1.05);
+    }
+    .download:active {
+      transform: scale(0.95);
+    }
+
+    #pagination {
+      margin-top: 1rem;
+      text-align: center;
+    }
+    #pagination button {
+      margin: 0 0.3rem;
+      font-weight: 700;
+      background: var(--btn-bg);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      color: var(--gold);
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+      transition: background 0.3s ease, transform 0.2s ease;
+      user-select: none;
+    }
+    #pagination button:hover {
+      background: var(--btn-hover-bg);
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(255,215,0,0.8);
+    }
+    #pagination span {
+      color: var(--gold);
+      font-weight: 700;
+      user-select: none;
+    }
+
+    #loading {
+      display: flex;
+      justify-content: center;
+      margin-top: 3rem;
+      user-select: none;
+    }
+    .spinner {
+      width: 50px; height: 50px;
+      border: 5px solid var(--btn-bg);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      filter: drop-shadow(0 0 6px var(--gold));
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #toggleFavoritesBtn {
+      user-select: none;
+      border-radius: 20px;
+      padding: 0.5rem 1.3rem;
+      background: var(--btn-bg);
+      color: var(--gold);
+      font-weight: 700;
+      box-shadow: 0 3px 9px rgba(0,0,0,0.3);
+      transition: background 0.3s ease, transform 0.2s ease;
+      cursor: pointer;
+    }
+    #toggleFavoritesBtn[aria-pressed="true"] {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 3px 15px var(--accent);
+      transform: scale(1.05);
+    }
+    #toggleFavoritesBtn:hover {
+      background: var(--btn-hover-bg);
+      transform: scale(1.05);
+    }
+
+    #darkModeToggle {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: var(--gold);
+      cursor: pointer;
+      user-select: none;
+      text-shadow: 0 0 6px var(--gold);
+      transition: color 0.3s ease;
+      margin-left: auto;
+    }
+    #darkModeToggle:hover {
+      color: var(--accent);
+      text-shadow: 0 0 12px var(--accent);
+    }
+
+    /* Scroll to top button */
+    #scrollTopBtn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: var(--accent);
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 3px 12px var(--accent);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      user-select: none;
+      z-index: 1000;
+    }
+    #scrollTopBtn.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Toast notifications */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--toast-bg);
+      color: var(--toast-fg);
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      user-select: none;
+      z-index: 2000;
+    }
+    #toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 600px) {
+      #controls {
+        flex-direction: column;
+      }
+      input[type="text"], select, input[type="email"], input[type="password"], button {
+        flex: 1 1 100%;
+      }
+      .wallpaper img {
+        height: 120px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NEW GENERATION WALLPAPERS GALLERY</h1>
+    <button id="darkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">🌓</button>
+  </header>
+  <div id="userArea">
+    <div id="userInfo">Not signed in</div>
+    <button id="loginGoogleBtn">Login with Google</button>
+    <input id="emailInput" type="email" placeholder="Email" aria-label="Email" />
+    <input id="passwordInput" type="password" placeholder="Password" aria-label="Password" />
+    <button id="loginEmailBtn">Login</button>
+    <button id="signupEmailBtn">Sign Up</button>
+    <button id="logoutBtn" style="display:none;">Logout</button>
+  </div>
+
+  <div id="controls">
+    <input id="searchInput" type="text" placeholder="Search wallpapers..." aria-label="Search wallpapers" autocomplete="off" />
+    <select id="categoryFilter" aria-label="Filter by category"></select>
+    <button id="toggleFavoritesBtn" aria-pressed="false" title="Show favorites only">Show Favorites</button>
+  </div>
+
+  <div id="loading"><div class="spinner"></div></div>
+
+  <main id="gallery" aria-live="polite" aria-busy="false"></main>
+
+  <nav id="pagination" aria-label="Pagination controls"></nav>
+
+  <button id="scrollTopBtn" aria-label="Scroll to top" title="Scroll to top">⬆️</button>
+
+  <div id="toast" role="alert" aria-live="assertive"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+  // --- Firebase config + init ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyBPliWN-g0LKBd-vz2Pb5l2Ym1y1aQshVg",
+    authDomain: "my-church-website-778fb.firebaseapp.com",
+    databaseURL: "https://my-church-website-778fb-default-rtdb.firebaseio.com",
+    projectId: "my-church-website-778fb",
+    storageBucket: "my-church-website-778fb.appspot.com",
+    messagingSenderId: "805885068580",
+    appId: "1:805885068580:web:2ef69ab985f3026dff1fb1"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  // --- DOM Elements ---
+  const userInfo = document.getElementById('userInfo');
+  const loginGoogleBtn = document.getElementById('loginGoogleBtn');
+  const loginEmailBtn = document.getElementById('loginEmailBtn');
+  const signupEmailBtn = document.getElementById('signupEmailBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const emailInput = document.getElementById('emailInput');
+  const passwordInput = document.getElementById('passwordInput');
+
+  const gallery = document.getElementById('gallery');
+  const searchInput = document.getElementById('searchInput');
+  const categoryFilter = document.getElementById('categoryFilter');
+  const toggleFavoritesBtn = document.getElementById('toggleFavoritesBtn');
+  const pagination = document.getElementById('pagination');
+  const loading = document.getElementById('loading');
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  const toast = document.getElementById('toast');
+
+  // --- Variables ---
+  let wallpapers = [];
+  let categories = new Set();
+  let userFavorites = {};
+  let currentUser = null;
+  let showFavoritesOnly = false;
+  let currentPage = 1;
+  const itemsPerPage = 24;
+  let downloadTimestamps = [];
+  const DOWNLOAD_LIMIT = 5; // per minute
+  const DOWNLOAD_INTERVAL = 60000; // 60 seconds
+
+  // --- Toast helper ---
+  function showToast(msg, duration = 3000) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  }
+
+  // --- Dark mode toggle ---
+  function setDarkMode(on) {
+    if(on) {
+      document.documentElement.style.setProperty('--bg', 'var(--bg-dark)');
+      document.documentElement.style.setProperty('--fg', 'var(--fg-dark)');
+    } else {
+      document.documentElement.style.setProperty('--bg', 'var(--bg-light)');
+      document.documentElement.style.setProperty('--fg', 'var(--fg-light)');
+    }
+    localStorage.setItem('darkMode', on ? '1' : '0');
+  }
+  darkModeToggle.onclick = () => {
+    const isDark = localStorage.getItem('darkMode') === '1';
+    setDarkMode(!isDark);
+  };
+  // Load saved mode on page load
+  setDarkMode(localStorage.getItem('darkMode') === '1');
+
+  // --- Authentication ---
+  loginGoogleBtn.onclick = () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+      .catch(e => showToast('Google login failed: ' + e.message));
+  };
+  signupEmailBtn.onclick = () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    if (!email || !password) return showToast('Email and password required');
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(() => showToast('Signed up! You can now login.'))
+      .catch(e => showToast('Signup error: ' + e.message));
+  };
+  loginEmailBtn.onclick = () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    if (!email || !password) return showToast('Email and password required');
+    auth.signInWithEmailAndPassword(email, password)
+      .catch(e => showToast('Login error: ' + e.message));
+  };
+  logoutBtn.onclick = () => auth.signOut();
+
+  auth.onAuthStateChanged(user => {
+    currentUser = user;
+    if (user) {
+      userInfo.textContent = `Signed in as ${user.email || user.displayName}`;
+      loginGoogleBtn.style.display = 'none';
+      loginEmailBtn.style.display = 'none';
+      signupEmailBtn.style.display = 'none';
+      emailInput.style.display = 'none';
+      passwordInput.style.display = 'none';
+      logoutBtn.style.display = 'inline-block';
+      loadUserFavorites();
+    } else {
+      userInfo.textContent = 'Not signed in';
+      loginGoogleBtn.style.display = 'inline-block';
+      loginEmailBtn.style.display = 'inline-block';
+      signupEmailBtn.style.display = 'inline-block';
+      emailInput.style.display = 'inline-block';
+      passwordInput.style.display = 'inline-block';
+      logoutBtn.style.display = 'none';
+      userFavorites = {};
+      renderGallery();
+    }
+  });
+
+  // --- Load user favorites from DB ---
+  function loadUserFavorites() {
+    if(!currentUser) return;
+    const uid = currentUser.uid;
+    db.ref('favorites/' + uid).once('value').then(snapshot => {
+      userFavorites = snapshot.val() || {};
+      renderGallery();
+    });
+  }
+
+  // --- Save user favorites to DB ---
+  function saveUserFavorites() {
+    if(!currentUser) return;
+    const uid = currentUser.uid;
+    db.ref('favorites/' + uid).set(userFavorites);
+  }
+
+  // --- Wallpaper generator ---
+  function generateWallpapers(count = 1000) {
+    const cats = ['Nature', 'Abstract', 'Cities', 'Space', 'Animals', 'Art', 'Technology', 'Cars', 'People', 'Sports'];
+    let arr = [];
+    for(let i=1; i<=count; i++) {
+      const cat = cats[i % cats.length];
+      categories.add(cat);
+      // Using picsum.photos with seed to get different images
+      arr.push({
+        id: `wp${i}`,
+        title: `Wallpaper #${i}`,
+        category: cat,
+        url: `https://picsum.photos/seed/${i}/400/250`
+      });
+    }
+    return arr;
+  }
+
+  // --- Render category filter options ---
+  function renderCategories() {
+    categoryFilter.innerHTML = `<option value="">All Categories</option>`;
+    Array.from(categories).sort().forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      categoryFilter.appendChild(option);
+    });
+  }
+
+  // --- Pagination and gallery rendering ---
+  function renderGallery() {
+    gallery.setAttribute('aria-busy', 'true');
+    gallery.innerHTML = '';
+    loading.style.display = 'flex';
+
+    let filtered = wallpapers;
+
+    // Filter by favorites
+    if(showFavoritesOnly) {
+      filtered = filtered.filter(wp => userFavorites[wp.id]);
+    }
+
+    // Filter by category
+    const selectedCat = categoryFilter.value;
+    if(selectedCat) {
+      filtered = filtered.filter(wp => wp.category === selectedCat);
+    }
+
+    // Filter by search
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    if(searchTerm) {
+      filtered = filtered.filter(wp => wp.title.toLowerCase().includes(searchTerm));
+    }
+
+    // Pagination calculations
+    const totalItems = filtered.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    const pageItems = filtered.slice(startIdx, startIdx + itemsPerPage);
+
+    // Render wallpapers
+    pageItems.forEach((wp, index) => {
+      const div = document.createElement('div');
+      div.className = 'wallpaper';
+      div.style.setProperty('--delay', `${index * 60}ms`);
+      div.setAttribute('tabindex', '0');
+      div.setAttribute('aria-label', `${wp.title}, category: ${wp.category}`);
+
+      const favClass = userFavorites[wp.id] ? 'favorite active' : 'favorite';
+
+      div.innerHTML = `
+        <img src="${wp.url}" alt="${wp.title}" loading="lazy" />
+        <button class="${favClass}" aria-pressed="${!!userFavorites[wp.id]}" aria-label="Toggle favorite for ${wp.title}">♥</button>
+        <div class="info">
+          <strong>${wp.title}</strong>
+          <small>${wp.category}</small>
+          <button class="download" aria-label="Download ${wp.title}">Download</button>
+        </div>
+      `;
+
+      // Favorite toggle
+      const favBtn = div.querySelector('.favorite');
+      favBtn.onclick = e => {
+        e.stopPropagation();
+        if(!currentUser) return showToast('Please login to favorite wallpapers');
+        if(userFavorites[wp.id]) {
+          delete userFavorites[wp.id];
+          favBtn.classList.remove('active');
+          favBtn.setAttribute('aria-pressed', 'false');
+        } else {
+          userFavorites[wp.id] = true;
+          favBtn.classList.add('active');
+          favBtn.setAttribute('aria-pressed', 'true');
+        }
+        saveUserFavorites();
+      };
+
+      // Download button
+      const dlBtn = div.querySelector('.download');
+      dlBtn.onclick = () => {
+        if(!currentUser) {
+          showToast('Login required to download wallpapers');
+          return;
+        }
+        const now = Date.now();
+        // Remove timestamps older than interval
+        downloadTimestamps = downloadTimestamps.filter(ts => now - ts < DOWNLOAD_INTERVAL);
+        if(downloadTimestamps.length >= DOWNLOAD_LIMIT) {
+          showToast(`Download limit reached. Try again later.`);
+          return;
+        }
+        downloadTimestamps.push(now);
+        downloadWallpaper(wp.url, wp.title);
+      };
+
+      gallery.appendChild(div);
+    });
+
+    // Pagination
+    renderPagination(totalPages);
+
+    loading.style.display = 'none';
+    gallery.setAttribute('aria-busy', 'false');
+  }
+
+  // --- Download wallpaper function ---
+  function downloadWallpaper(url, title) {
+    fetch(url)
+      .then(resp => resp.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${title}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        showToast(`Downloaded: ${title}`);
+      })
+      .catch(() => showToast('Download failed.'));
+  }
+
+  // --- Render pagination buttons ---
+  function renderPagination(totalPages) {
+    pagination.innerHTML = '';
+    if(totalPages < 2) return;
+
+    if(currentPage > 1) {
+      const prev = document.createElement('button');
+      prev.textContent = 'Prev';
+      prev.onclick = () => { currentPage--; renderGallery(); };
+      pagination.appendChild(prev);
+    }
+
+    pagination.appendChild(document.createElement('span')).textContent = `Page ${currentPage} of ${totalPages}`;
+
+    if(currentPage < totalPages) {
+      const next = document.createElement('button');
+      next.textContent = 'Next';
+      next.onclick = () => { currentPage++; renderGallery(); };
+      pagination.appendChild(next);
+    }
+  }
+
+  // --- Search and filter events ---
+  searchInput.addEventListener('input', () => {
+    currentPage = 1;
+    renderGallery();
+  });
+  categoryFilter.addEventListener('change', () => {
+    currentPage = 1;
+    renderGallery();
+  });
+  toggleFavoritesBtn.addEventListener('click', () => {
+    showFavoritesOnly = !showFavoritesOnly;
+    toggleFavoritesBtn.setAttribute('aria-pressed', showFavoritesOnly);
+    toggleFavoritesBtn.textContent = showFavoritesOnly ? 'Show All' : 'Show Favorites';
+    currentPage = 1;
+    renderGallery();
+  });
+
+  // --- Scroll to top button ---
+  window.addEventListener('scroll', () => {
+    if(window.scrollY > 300) scrollTopBtn.classList.add('show');
+    else scrollTopBtn.classList.remove('show');
+  });
+  scrollTopBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // --- Initialize app ---
+  wallpapers = generateWallpapers(1000);
+  renderCategories();
+  renderGallery();
+
+  // Cache wallpapers in IndexedDB or Cache API (simple version)
+  // For brevity, not implemented here, but recommended for offline support.
+
+</script>
+</body>
+</html>
